@@ -1,347 +1,860 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AW - Creative Developer Freelance</title>
+    <title>ALEXIS - Kinetic Typography</title>
     <style>
-        /* --- 1. RESET & VARIABLES (Code original extrait) --- */
+        /* --- 1. CONFIGURATION DES COULEURS --- */
         :root {
-            --color-bg: #f4f0e8;
-            --color-text: #0d0d0d;
-            --color-accent: #e60023; /* Le rouge officiel de wodniack.dev */
-            --font-primary: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            --font-display: 'Impact', sans-serif;
-            --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+            /* Thème Clair (Défaut) */
+            --bg-color: #f4f0e8;
+            --ink-color: #0d0d0d;
+            --lines-color: #0d0d0d;
+            --card-bg: #ffffff;
+            --card-back-color: #0d0d0d;
+            --thickness-color: #1a1a1a;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            background-color: var(--color-bg);
-            color: var(--color-text);
-            font-family: var(--font-primary);
-            font-size: 16px;
-            overflow-x: hidden;
-            overscroll-behavior: none;
-            cursor: crosshair; /* Le curseur croix du site */
+        body.hermes-mode {
+            /* Thème Sombre/Orange */
+            --bg-color: #fc4c02; 
+            --ink-color: #1a1a1a;
+            --lines-color: #1a1a1a;
+            --card-bg: #f0f0f0;
+            --card-back-color: #1a1a1a;
+            --thickness-color: #000000;
         }
 
-        /* --- 2. HEADER --- */
-        .header {
-            position: fixed;
-            top: 0; left: 0; width: 100%;
-            padding: 2rem 3rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            z-index: 100;
-            mix-blend-mode: difference;
-            color: #fff;
-            pointer-events: none; /* Laisse cliquer au travers */
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--ink-color);
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            /* La transition lente est supprimée car le "wiper" gère l'effet visuel */
+            /* transition: background-color 0.8s ease, color 0.8s ease; */
+            cursor: none;
+            user-select: none;
+        }
+
+        /* --- 2. CURSEUR --- */
+        .cursor {
+            position: fixed; top: 0; left: 0; 
+            width: 25px; height: 25px; 
+            background-color: #ffffff; 
+            border-radius: 50%;
+            pointer-events: none; z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: transform 0.1s ease;
+            mix-blend-mode: difference; 
+        }
+        .cursor.hovered { transform: translate(-50%, -50%) scale(3); }
+        .cursor.grabbing { 
+            width: 60px; height: 60px; 
+            background: transparent; border: 2px solid #fff;
+            transition: width 0.2s, height 0.2s;
+        }
+
+        /* --- SYSTÈME DE TRANSITION (SCAN LINE + WIPER) --- */
+        
+        /* Le trait blanc visible */
+        .scan-line {
+            position: fixed; top: 0; bottom: 0;
+            width: 8px;
+            background-color: #fff;
+            z-index: 9002; /* Au-dessus du wiper */
+            pointer-events: none;
+            mix-blend-mode: difference; 
+            opacity: 0;
+            /* L'animation doit être identique à celle du wiper */
+            transition: transform 1.2s cubic-bezier(0.6, 0, 0.4, 1), opacity 0.1s;
+        }
+
+        /* Le bloc de couleur qui "essuie" le fond */
+        .theme-wiper {
+            position: fixed; top: 0; bottom: 0;
+            width: 100%;
+            z-index: 9001; /* Au-dessus du contenu, sous la ligne */
+            pointer-events: none;
+            /* La couleur de fond est définie dynamiquement en JS */
+            transform: scaleX(0); /* Caché par défaut */
+            transition: transform 1.2s cubic-bezier(0.6, 0, 0.4, 1);
+        }
+
+        /* --- États d'animation --- */
+        
+        /* Gauche vers Droite */
+        body.animating-lr .scan-line {
+            opacity: 1;
+            /* Part de gauche (-8px) et va à droite (100vw) */
+            transform: translateX(calc(100vw + 8px)); 
+            left: -8px;
+        }
+        body.animating-lr .theme-wiper {
+            transform-origin: left;
+            transform: scaleX(1);
+        }
+
+        /* Droite vers Gauche */
+        body.animating-rl .scan-line {
+            opacity: 1;
+             /* Part de droite et va à gauche */
+            transform: translateX(calc(-100vw - 8px));
+            left: auto; right: -8px;
+        }
+        body.animating-rl .theme-wiper {
+            transform-origin: right;
+            transform: scaleX(1);
+        }
+
+
+        /* --- 3. HEADER --- */
+        header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 80px; z-index: 100;
+            display: grid; grid-template-columns: 80px 1fr 80px;
+            pointer-events: none;
+        }
+        .nav-cell { 
+            display: flex; align-items: center; justify-content: center; 
+            pointer-events: auto; 
         }
         
-        .header-logo, .header-nav a {
-            pointer-events: auto;
-            text-decoration: none;
-            color: inherit;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.05em;
-            font-weight: 700;
-        }
-
-        .header-nav ul {
-            list-style: none;
-            display: flex;
-            gap: 2rem;
-        }
-
-        /* --- 3. SCROLL CONTAINER (Smooth Scroll) --- */
-        .main-container {
-            position: fixed;
-            top: 0; left: 0; width: 100%;
-            height: 100%;
-            overflow: hidden;
-        }
-
-        .scroll-content {
-            will-change: transform; /* Optimisation performance */
-        }
-
-        /* --- 4. HERO SECTION (KINETIC TYPO) --- */
-        .section-hero {
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding-top: 10vh;
-        }
-
-        .big-title {
-            font-family: var(--font-display);
-            font-size: 13.5vw;
-            line-height: 0.82;
-            text-transform: uppercase;
-            text-align: center;
-            white-space: nowrap;
-            color: var(--color-text);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .big-title .line {
-            display: block;
-            overflow: hidden;
-        }
-
-        /* Animation d'entrée comme sur le site */
-        .big-title span {
-            display: inline-block;
-            transform: translateY(100%);
-            animation: slideUp 1.2s var(--ease-out-expo) forwards;
-        }
-        .line:nth-child(2) span { animation-delay: 0.1s; }
-
-        @keyframes slideUp {
-            to { transform: translateY(0); }
-        }
-
-        /* --- 5. PROJECT LIST (TABLE STYLE) --- */
-        .section-work {
-            padding: 10vh 0;
-            width: 90%;
-            margin: 0 auto;
-        }
-
-        .work-header {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            margin-bottom: 4rem;
-            opacity: 0.5;
-        }
-
-        .project-row {
-            border-top: 1px solid rgba(13, 13, 13, 0.2);
-            padding: 2rem 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            transition: color 0.3s ease;
-            cursor: pointer;
-        }
-
-        .project-row:last-child { border-bottom: 1px solid rgba(13, 13, 13, 0.2); }
-
-        .project-row:hover {
-            color: var(--color-accent); /* Hover Rouge */
-        }
-
-        .p-name { font-size: 2.5vw; font-family: var(--font-display); text-transform: uppercase; }
-        .p-type { font-size: 0.9rem; opacity: 0.6; }
-        .p-year { font-size: 0.9rem; font-variant-numeric: tabular-nums; }
-
-        /* --- 6. FOOTER (WATERFALL TEXT) --- */
-        .section-footer {
-            height: 120vh; /* Grand espace pour le scroll */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            perspective: 1000px; /* Clé de l'effet 3D */
-            overflow: hidden;
-            background-color: var(--color-accent); /* Fond rouge à la fin */
-            color: var(--color-text);
-            margin-top: 20vh;
-        }
-
-        /* Le texte qui tombe */
-        .waterfall-text {
-            font-family: var(--font-display);
-            font-size: 16vw;
-            line-height: 0.85;
-            text-align: center;
-            text-transform: uppercase;
-            transform-origin: bottom center;
-            will-change: transform;
-        }
-
-        /* Le bouton GO */
-        .footer-cta {
-            width: 10vw; height: 10vw;
-            min-width: 120px; min-height: 120px;
-            background: #000;
-            color: var(--color-accent);
+        /* MENU CENTRAL */
+        .center-menu-btn {
+            width: 40px; height: 40px;
+            border: 1px solid var(--ink-color);
             border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-family: var(--font-display);
-            font-size: 2rem;
-            position: absolute;
-            bottom: 10vh;
-            z-index: 10;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 3px;
             cursor: pointer;
-            transition: transform 0.3s var(--ease-out-expo);
+            transition: transform 0.3s ease, background-color 0.3s ease;
         }
-        .footer-cta:hover { transform: scale(1.1); }
+        .center-menu-btn span {
+            display: block;
+            width: 16px; height: 2px;
+            background-color: var(--ink-color);
+            transition: background-color 0.6s ease;
+        }
+        .center-menu-btn:hover { transform: scale(1.2); }
 
-        /* --- 7. BINARY BACKGROUND (Décoration) --- */
-        .binary-bg {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-            z-index: -1;
-            font-family: monospace;
-            font-size: 10px;
-            color: rgba(0,0,0,0.03);
-            overflow: hidden;
-            white-space: pre-wrap;
-            word-break: break-all;
-            line-height: 1;
+        /* --- 4. VIEWPORT FIXE --- */
+        .fixed-view {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex; flex-direction: column; 
+            justify-content: center; align-items: center;
+            z-index: 5;
         }
+
+        /* --- 5. PAGE 1 : ZOOM & KINETIC TYPO --- */
+        .zoom-layer {
+            position: absolute; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            will-change: transform, opacity; transform-origin: center center;
+            pointer-events: auto; z-index: 10;
+        }
+        
+        .lines-wrapper {
+            width: 100%; 
+            padding: 2vh 0; 
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            transition: border-color 0.6s ease;
+            overflow: hidden;
+            gap: 2vh; 
+        }
+
+        /* --- BANDEAU BINAIRE ENCADRÉ --- */
+        .binary-strip {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 5px 0;
+            
+            border-top: 1px solid var(--lines-color);
+            border-bottom: 1px solid var(--lines-color);
+            padding: 6px 0;
+            transition: border-color 0.6s ease;
+        }
+
+        .strip-content {
+            width: 100%; 
+            padding: 0 10px; 
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between; 
+            align-items: center;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.65rem; 
+            color: var(--ink-color);
+            user-select: none;
+            opacity: 0.7;
+            overflow: hidden; 
+        }
+
+        .bin-group {
+            font-weight: bold;
+            letter-spacing: 1px;
+            flex-shrink: 0; 
+        }
+
+        .bin-separator {
+            font-weight: lighter;
+            opacity: 0.5;
+            letter-spacing: 0px; 
+            flex-shrink: 0;
+            margin: 0 5px;
+        }
+        
+        /* CONTENEUR PRINCIPAL DU TITRE */
+        .title-line {
+            display: flex;
+            justify-content: center;
+            align-items: center;     
+            width: 100%; 
+            line-height: 0.85;
+            gap: 2vw; 
+        }
+
+        /* ETOILE 4 BRANCHES */
+        .star-icon {
+            width: 5vw; 
+            height: 5vw;
+            fill: var(--ink-color);
+            animation: rotateStar 10s linear infinite; 
+            flex-shrink: 0;
+        }
+
+        @keyframes rotateStar {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* LETTRE INDIVIDUELLE */
+        .char-wrap {
+            display: block;
+            font-family: 'Impact', sans-serif;
+            font-size: 13.5vw; 
+            text-transform: uppercase;
+            color: var(--ink-color);
+            position: relative;
+            overflow: hidden;
+            width: auto;
+        }
+
+        .char-inner {
+            display: block;
+            position: relative;
+            transition: none;
+        }
+
+        .char-inner::after {
+            content: attr(data-char);
+            position: absolute;
+            width: 100%; height: 100%;
+        }
+
+        /* --- ANIMATIONS MULTIDIRECTIONNELLES --- */
+        .anim-left .char-inner::after { left: 100%; top: 0; }
+        .anim-left .char-inner { animation: slideLeft 1.2s cubic-bezier(0.2, 1, 0.3, 1) forwards; }
+        @keyframes slideLeft { 0% { transform: translateX(0%); } 100% { transform: translateX(-100%); } }
+
+        .anim-right .char-inner::after { left: -100%; top: 0; }
+        .anim-right .char-inner { animation: slideRight 1.2s cubic-bezier(0.2, 1, 0.3, 1) forwards; }
+        @keyframes slideRight { 0% { transform: translateX(0%); } 100% { transform: translateX(100%); } }
+
+        .anim-up .char-inner::after { top: 100%; left: 0; }
+        .anim-up .char-inner { animation: slideUp 1.2s cubic-bezier(0.2, 1, 0.3, 1) forwards; }
+        @keyframes slideUp { 0% { transform: translateY(0%); } 100% { transform: translateY(-100%); } }
+
+        .anim-down .char-inner::after { top: -100%; left: 0; }
+        .anim-down .char-inner { animation: slideDown 1.2s cubic-bezier(0.2, 1, 0.3, 1) forwards; }
+        @keyframes slideDown { 0% { transform: translateY(0%); } 100% { transform: translateY(100%); } }
+
+
+        .icon-btn {
+            background: none; border: none; cursor: pointer; padding: 20px; margin-top: 3vh; pointer-events: auto; position: relative; z-index: 1000;
+            display: flex; align-items: center; justify-content: center; transition: transform 0.5s ease;
+        }
+        .icon-btn svg { width: 32px; height: 32px; fill: var(--ink-color); transition: fill 0.6s ease; }
+        .icon-btn:hover { transform: rotate(180deg); }
+
+        /* --- 6. PAGE 2 : PORTFOLIO --- */
+        .second-page {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; will-change: opacity, transform; pointer-events: none; z-index: 15;
+            transform-style: preserve-3d;
+        }
+        .content-active .second-page { pointer-events: auto; }
+        .portfolio-title {
+            font-family: 'Impact', sans-serif; font-size: 15vw; 
+            margin-bottom: 0px; 
+            text-transform: uppercase; letter-spacing: 2px; color: var(--ink-color); 
+            transition: color 0.6s ease;
+            transform-origin: center center;
+        }
+        .btn {
+            padding: 20px 60px; background: var(--ink-color); border: 1px solid var(--ink-color); color: var(--bg-color);
+            font-size: 1.2rem; text-transform: uppercase; letter-spacing: 2px; text-decoration: none; font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        .btn:hover { background: transparent; color: var(--ink-color); }
+
+        /* --- 7. PAGE 3 : COMPÉTENCES --- */
+        .third-page {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transform: translateY(100%); will-change: transform; background-color: var(--bg-color); z-index: 30; 
+            transition: background 0.8s ease;
+        }
+        .split-title-container {
+            display: flex; gap: 3vw; justify-content: center; width: 100%; margin-bottom: 5vh; overflow: hidden;
+        }
+        .skills-word {
+            font-family: 'Impact', sans-serif; font-size: 7vw; text-transform: uppercase; color: var(--ink-color);
+            will-change: transform; transition: color 0.6s ease;
+        }
+        .skills-grid {
+            display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 20px;
+            width: 70%; max-width: 900px; will-change: transform, opacity;
+        }
+        .skill-card {
+            border: 1px solid var(--lines-color); padding: 30px; display: flex; flex-direction: column;
+            background: rgba(255,255,255,0.05); cursor: pointer;
+            transition: border-color 0.6s ease, transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .skill-card:hover { transform: scale(1.05); background: rgba(255,255,255,0.1); z-index: 10; }
+        .skill-card h3 {
+            font-family: 'Helvetica Neue', sans-serif; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;
+            margin-top: 0; margin-bottom: 15px; font-size: 1.2rem; border-bottom: 2px solid var(--lines-color);
+            padding-bottom: 10px; width: fit-content; transition: border-color 0.6s ease;
+        }
+        .skill-card ul { list-style: none; padding: 0; margin: 0; font-size: 0.9rem; line-height: 1.6; opacity: 0.8; }
+
+        /* --- 8. GALERIE & SOL --- */
+        .gallery-section {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            overflow: hidden;
+            transform: translateY(100%); 
+            will-change: transform;
+            background-color: var(--bg-color);
+            z-index: 40;
+            perspective: 800px;
+            transition: background 0.8s ease;
+        }
+        .gallery-title {
+            position: absolute; top: 5%; left: 5%;
+            font-family: 'Impact', sans-serif; font-size: 4vw; 
+            color: var(--ink-color); opacity: 0.2; pointer-events: none; z-index: 5;
+        }
+        .perspective-grid {
+            position: absolute; top: 50%; left: 50%;
+            width: 200vmax; height: 200vmax;
+            transform: translate(-50%, -50%);
+            z-index: 1; pointer-events: none;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .grid-center-circle {
+            position: absolute; width: 100px; height: 100px;
+            border: 1px solid var(--lines-color); border-radius: 50%;
+            background-color: var(--bg-color);
+            z-index: 2; transition: border-color 0.8s ease, background-color 0.8s ease;
+            display: flex; justify-content: center; align-items: center;
+            font-family: 'Impact', sans-serif; font-size: 3.5rem; color: var(--ink-color);
+            animation: spin-center 8s linear infinite;
+        }
+        .grid-line {
+            position: absolute; top: 50%; left: 50%; width: 50%; height: 1px;
+            background-color: var(--lines-color); transform-origin: 0% 50%; opacity: 0.4; 
+            transition: background-color 0.8s ease;
+        }
+        .ledge-wrapper {
+            position: absolute; top: 50%; left: 50%;
+            transform-style: preserve-3d; transform: translate(-50%, -50%);
+            width: 70%; max-width: 900px; height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            pointer-events: none; z-index: 60; perspective: 600px;
+        }
+        .ledge-text {
+            font-family: 'Impact', sans-serif; font-size: 6rem; line-height: 1;
+            text-align: center; color: var(--ink-color); text-transform: uppercase;
+            will-change: transform, opacity;
+        }
+        .go-button-container {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 70; opacity: 0; pointer-events: none; transition: opacity 0.5s ease;
+        }
+        .go-button {
+            width: 120px; height: 120px; background-color: #000; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: #e60023; font-family: 'Impact', sans-serif; font-size: 3rem;
+            cursor: pointer; pointer-events: auto; animation: pulse-go 2s infinite;
+        }
+        .go-icon { margin-top: 50px; width: 40px; height: 40px; display: flex; justify-content: center; fill: #000; }
+        @keyframes pulse-go { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+        /* --- 9. PAGE FINALE --- */
+        .final-page {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background-color: var(--ink-color); color: var(--bg-color);
+            transform: translateY(100%); z-index: 100; will-change: transform;
+        }
+        .final-title { font-family: 'Impact', sans-serif; font-size: 10vw; text-transform: uppercase; margin: 0; }
+        .final-links { display: flex; gap: 30px; margin-top: 40px; }
+        .final-links a { color: var(--bg-color); text-decoration: none; font-size: 1.5rem; font-weight: bold; border-bottom: 2px solid transparent; transition: 0.3s; }
+        .final-links a:hover { border-bottom: 2px solid var(--bg-color); }
+
+        /* --- 3D CARDS --- */
+        :root { --c-width: 90px; --c-height: 120px; --c-depth: 20px; }
+        .infinite-card {
+            position: absolute; width: var(--c-width); height: var(--c-height);
+            top: 50%; left: 50%; margin-left: -45px; margin-top: -60px;
+            transform-style: preserve-3d; will-change: transform; cursor: grab; z-index: 10;
+        }
+        .infinite-card:active { cursor: grabbing; }
+        .cube-face { position: absolute; border: 2px solid var(--ink-color); background-color: var(--card-bg); backface-visibility: visible; }
+        .face-front { width: var(--c-width); height: var(--c-height); transform: translateZ(10px); display: flex; flex-direction: column; padding: 5px; box-sizing: border-box; }
+        .face-back { width: var(--c-width); height: var(--c-height); transform: rotateY(180deg) translateZ(10px); background-color: var(--card-back-color); }
+        .face-right { width: var(--c-depth); height: var(--c-height); left: 35px; transform: rotateY(90deg) translateZ(45px); background-color: var(--thickness-color); border: none; }
+        .face-left { width: var(--c-depth); height: var(--c-height); left: 35px; transform: rotateY(-90deg) translateZ(45px); background-color: var(--thickness-color); border: none; }
+        .face-top { width: var(--c-width); height: var(--c-depth); top: 50px; transform: rotateX(90deg) translateZ(60px); background-color: var(--thickness-color); border: none; }
+        .face-bottom { width: var(--c-width); height: var(--c-depth); top: 50px; transform: rotateX(-90deg) translateZ(60px); background-color: var(--thickness-color); border: none; }
+        .card-img { width: 100%; height: 75%; background-color: #ccc; object-fit: cover; pointer-events: none; margin-bottom: 5px; }
+        .card-caption { font-family: 'Courier New', monospace; font-weight: bold; font-size: 0.4rem; color: #1a1a1a; text-align: right; overflow: hidden; white-space: nowrap; }
 
     </style>
 </head>
 <body>
 
-    <header class="header">
-        <a href="#" class="header-logo">Antoine Wodniack</a>
-        <nav class="header-nav">
-            <ul>
-                <li><a href="#about">About</a></li>
-                <li><a href="#work">Work</a></li>
-                <li><a href="#contact">Contact</a></li>
-            </ul>
-        </nav>
+    <div class="cursor" id="cursor"></div>
+
+    <div class="scan-line" id="scan-line"></div>
+    <div class="theme-wiper" id="theme-wiper"></div>
+
+    <header>
+        <div class="nav-cell"></div>
+        <div class="nav-cell">
+            <div class="center-menu-btn hover-trigger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+        <div class="nav-cell"></div>
     </header>
 
-    <div class="binary-bg" id="binaryBg"></div>
-
-    <div class="main-container">
-        <div class="scroll-content" id="scrollContent">
-            
-            <section class="section-hero">
-                <h1 class="big-title">
-                    <span class="line"><span>CREATIVE</span></span>
-                    <span class="line"><span>DEVELOPER</span></span>
-                </h1>
-            </section>
-
-            <section class="section-work" id="work">
-                <div class="work-header">Selected Works (2020-2025)</div>
+    <div class="fixed-view">
+        
+        <div class="zoom-layer" id="zoom-layer">
+            <div class="lines-wrapper">
                 
-                <div class="project-row">
-                    <span class="p-name">Generous Branding</span>
-                    <span class="p-type">Creative Dev</span>
-                    <span class="p-year">2024</span>
+                <div class="binary-strip">
+                    <div class="strip-content" id="bin-top-content">
+                    </div>
                 </div>
-                <div class="project-row">
-                    <span class="p-name">Hunter Farmer</span>
-                    <span class="p-type">WebGL</span>
-                    <span class="p-year">2024</span>
-                </div>
-                <div class="project-row">
-                    <span class="p-name">Nod Bootcamp</span>
-                    <span class="p-type">Front-End</span>
-                    <span class="p-year">2023</span>
-                </div>
-                <div class="project-row">
-                    <span class="p-name">Rudl und Schwarm</span>
-                    <span class="p-type">Experience</span>
-                    <span class="p-year">2023</span>
-                </div>
-                <div class="project-row">
-                    <span class="p-name">24/7 Artists</span>
-                    <span class="p-type">Development</span>
-                    <span class="p-year">2022</span>
-                </div>
-                <div class="project-row">
-                    <span class="p-name">Vanguart</span>
-                    <span class="p-type">Animation</span>
-                    <span class="p-year">2022</span>
-                </div>
-                <div class="project-row">
-                    <span class="p-name">CodePen</span>
-                    <span class="p-type">Experiments</span>
-                    <span class="p-year">∞</span>
-                </div>
-            </section>
 
-            <section class="section-footer">
-                <div class="waterfall-text" id="waterfallText">
-                    CODING<br>MY WAY<br>SINCE<br>1987
-                </div>
-                <div class="footer-cta">GO</div>
-            </section>
+                <div class="title-line">
+                    <span class="char-wrap"><span class="char-inner" data-char="A">A</span></span>
+                    <span class="char-wrap"><span class="char-inner" data-char="L">L</span></span>
+                    <span class="char-wrap"><span class="char-inner" data-char="E">E</span></span>
+                    <span class="char-wrap"><span class="char-inner" data-char="X">X</span></span>
+                    <span class="char-wrap"><span class="char-inner" data-char="I">I</span></span>
+                    <span class="char-wrap"><span class="char-inner" data-char="S">S</span></span>
+                    
+                    <svg class="star-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M50 0 C55 35 65 45 100 50 C65 55 55 65 50 100 C45 65 35 55 0 50 C35 45 45 35 50 0Z" />
+                    </svg>
 
+                    <span class="char-wrap"><span class="char-inner" data-char="G">G</span></span>
+                    <span class="char-wrap"><span class="char-inner" data-char="O">O</span></span>
+                    <span class="char-wrap"><span class="char-inner" data-char="L">L</span></span>
+                    <span class="char-wrap"><span class="char-inner" data-char="L">L</span></span>
+                </div>
+
+                <div class="binary-strip">
+                    <div class="strip-content" id="bin-bottom-content">
+                    </div>
+                </div>
+
+            </div>
+            <button class="icon-btn hover-trigger" id="theme-btn">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><path d="M12 4V20C16.42 20 20 16.42 20 12C20 7.58 16.42 4 12 4Z"/></svg>
+            </button>
+            <p style="margin-top: 10px; font-size: 0.7rem; font-weight: bold; opacity: 0.6;">SCROLL</p>
         </div>
+
+        <div class="second-page" id="second-page">
+            <h2 class="portfolio-title">PORTFOLIO</h2>
+            <div style="display: flex; gap: 20px;">
+                <a href="#" class="btn hover-trigger">Projets</a><a href="https://www.linkedin.com/in/alexisgoll/" target="_blank" class="btn hover-trigger">Contact</a>
+            </div>
+        </div>
+
+        <div class="third-page" id="third-page">
+            <div class="split-title-container"><h2 class="skills-word" id="title-left">MES</h2><h2 class="skills-word" id="title-right">COMPÉTENCES</h2></div>
+            <div class="skills-grid" id="skills-grid">
+                <div class="skill-card hover-trigger"><h3>Expertises</h3><ul><li>Gestion de Projet</li><li>Direction Artistique</li><li>Stratégie de Marque</li><li>UX/UI Design</li></ul></div>
+                <div class="skill-card hover-trigger"><h3>Outils</h3><ul><li>Adobe Suite</li><li>Figma</li><li>Webflow</li><li>Blender</li></ul></div>
+                <div class="skill-card hover-trigger"><h3>Langues</h3><ul><li>Français</li><li>Anglais</li><li>Espagnol</li></ul></div>
+                <div class="skill-card hover-trigger"><h3>Autres</h3><ul><li>Photo</li><li>Vidéo</li><li>Motion</li></ul></div>
+            </div>
+        </div>
+
+        <div class="gallery-section" id="gallery-section">
+            <div class="perspective-grid" id="perspective-grid">
+                <div class="grid-center-circle">A</div>
+            </div>
+            
+            <div class="gallery-title">WORK</div>
+            <div id="cards-container"></div>
+
+            <div class="ledge-wrapper">
+                <div class="ledge-text" id="ledge-text">
+                    CRÉATIF DEPUIS MES DÉBUTS<br>
+                    PASSIONNÉ PAR LE DESIGN<br>
+                    ET L'INTERACTION
+                </div>
+            </div>
+        </div>
+
+        <div class="final-page" id="final-page">
+            <h2 class="final-title">LET'S TALK</h2>
+            <div class="final-links">
+                <a href="mailto:hello@alexisgoll.com" class="hover-trigger">Email</a>
+                <a href="#" class="hover-trigger">Instagram</a>
+                <a href="#" class="hover-trigger">LinkedIn</a>
+            </div>
+        </div>
+
     </div>
 
     <script>
-        // --- LOGIQUE JAVASCRIPT SIMPLIFIÉE ---
-        // Simulation de LocomotiveScroll / Lenis pour l'inertie
+        document.addEventListener('DOMContentLoaded', () => {
 
-        const container = document.querySelector('.main-container');
-        const content = document.getElementById('scrollContent');
-        const waterfallText = document.getElementById('waterfallText');
-        
-        let currentY = 0;
-        let targetY = 0;
-        const ease = 0.075; // Inertie
+            // --- 0. GENERATION DES LIGNES BINAIRES ---
+            const binTop = document.getElementById('bin-top-content');
+            const binBottom = document.getElementById('bin-bottom-content');
+            const groupsCount = 15; 
 
-        // Initialisation de la hauteur
-        function setHeight() {
-            document.body.style.height = `${content.getBoundingClientRect().height}px`;
-        }
-        window.addEventListener('resize', setHeight);
-        setHeight();
+            function createBinaryRow(container) {
+                for(let i=0; i<groupsCount; i++) {
+                    const groupSpan = document.createElement('span');
+                    groupSpan.classList.add('bin-group');
+                    groupSpan.innerText = "000000000000000"; 
+                    container.appendChild(groupSpan);
 
-        // Capture du scroll
-        window.addEventListener('scroll', () => {
-            targetY = window.scrollY;
-        });
+                    if (i < groupsCount - 1) {
+                        const sep = document.createElement('span');
+                        sep.classList.add('bin-separator');
+                        sep.innerText = "///////////////";
+                        container.appendChild(sep);
+                    }
+                }
+            }
+            createBinaryRow(binTop);
+            createBinaryRow(binBottom);
 
-        // Boucle d'animation (RAF)
-        function animate() {
-            // Interpolation linéaire (Lerp) pour la fluidité
-            currentY += (targetY - currentY) * ease;
+            const allGroups = document.querySelectorAll('.bin-group');
+            function generateRandomBinary() {
+                let s = "";
+                for(let i=0; i<15; i++) s += Math.random() > 0.5 ? "1" : "0";
+                return s;
+            }
+            setInterval(() => {
+                allGroups.forEach(g => {
+                    if(Math.random() > 0.5) g.innerText = generateRandomBinary();
+                });
+            }, 120);
 
-            // Application du scroll fluide
-            content.style.transform = `translate3d(0, -${currentY}px, 0)`;
 
-            // --- EFFET WATERFALL (Le texte qui tombe) ---
-            // On calcule quand le footer arrive à l'écran
-            const footerOffset = document.querySelector('.section-footer').offsetTop;
-            const distFromFooter = currentY + window.innerHeight - footerOffset;
-
-            if (distFromFooter > 0) {
-                // Calcul de la rotation basé sur le scroll
-                // Plus on descend, plus ça tourne vers 90deg
-                const progress = Math.min(distFromFooter / window.innerHeight, 1);
-                const rotateX = progress * 60; // Max 60 degrés
-                const translateY = progress * 100; // Glisse vers le bas
-
-                waterfallText.style.transform = `perspective(1000px) rotateX(${rotateX}deg) translateY(${translateY}px)`;
-                waterfallText.style.opacity = 1 - (progress * 0.5); // Leger fade
+            // --- 1. CONFIG BASE ---
+            const gridContainer = document.getElementById('perspective-grid');
+            const linesCount = 24; 
+            for(let i=0; i<linesCount; i++) {
+                const line = document.createElement('div');
+                line.classList.add('grid-line');
+                const angle = (360 / linesCount) * i;
+                line.style.transform = `rotate(${angle}deg)`;
+                gridContainer.appendChild(line);
             }
 
-            // Boucle infinie
-            requestAnimationFrame(animate);
-        }
-        
-        // Lancer l'animation
-        animate();
+            // --- 2. ANIMATION TYPO NOM ---
+            const allCharInners = document.querySelectorAll('.char-inner');
+            function triggerRandomLetterSlide() {
+                const randomIndex = Math.floor(Math.random() * allCharInners.length);
+                const element = allCharInners[randomIndex];
+                if (!element.parentElement.classList.contains('animating')) {
+                    element.parentElement.classList.add('animating');
+                    const direction = Math.floor(Math.random() * 4);
+                    let animClass = '';
+                    if(direction === 0) animClass = 'anim-left';
+                    else if(direction === 1) animClass = 'anim-right';
+                    else if(direction === 2) animClass = 'anim-up';
+                    else animClass = 'anim-down';
+                    element.parentElement.classList.add(animClass);
+                    setTimeout(() => {
+                        element.parentElement.classList.remove(animClass);
+                        element.parentElement.classList.remove('animating');
+                    }, 1200);
+                }
+            }
+            function loopLetterAnimation() {
+                triggerRandomLetterSlide();
+                const randomDelay = 1000 + Math.random() * 3000; 
+                setTimeout(loopLetterAnimation, randomDelay);
+            }
+            loopLetterAnimation();
 
-        // --- Génération du Background Binaire ---
-        const binaryBg = document.getElementById('binaryBg');
-        let binaryString = "";
-        for(let i=0; i<3000; i++) {
-            binaryString += Math.random() > 0.5 ? "1 " : "0 ";
-        }
-        binaryBg.textContent = binaryString;
+            // --- 3. CURSEUR ---
+            const cursor = document.getElementById('cursor');
+            document.addEventListener('mousemove', (e) => {
+                cursor.style.left = e.clientX + 'px';
+                cursor.style.top = e.clientY + 'px';
+            });
+            const addHoverEffect = () => {
+                document.querySelectorAll('a, button, .hover-trigger, .skill-card, .center-menu-btn').forEach(el => {
+                    el.addEventListener('mouseenter', () => cursor.classList.add('hovered'));
+                    el.addEventListener('mouseleave', () => cursor.classList.remove('hovered'));
+                });
+            };
+            addHoverEffect();
 
+            // --- 4. NOUVELLE LOGIQUE DE TRANSITION COULEUR (WIPER) ---
+            const themeBtn = document.getElementById('theme-btn');
+            const wiper = document.getElementById('theme-wiper');
+            let isTransitioning = false;
+            let clickCount = 0;
+
+            // Couleurs en dur pour le "wiper" (doivent matcher le CSS)
+            const lightBg = '#f4f0e8';
+            const darkBg = '#fc4c02';
+
+            themeBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); 
+                
+                if (isTransitioning) return;
+                isTransitioning = true;
+                clickCount++;
+
+                const isGoingDark = clickCount % 2 !== 0;
+                const animationClass = isGoingDark ? 'animating-lr' : 'animating-rl';
+                
+                // 1. Définir la couleur du wiper (la couleur CIBLE)
+                wiper.style.backgroundColor = isGoingDark ? darkBg : lightBg;
+
+                // 2. Lancer l'animation via une classe sur le body
+                // Un petit délai permet au navigateur de prendre en compte le changement de couleur
+                requestAnimationFrame(() => {
+                    document.body.classList.add(animationClass);
+                });
+
+                // 3. À la fin de l'animation (1200ms), basculer le vrai thème et nettoyer
+                setTimeout(() => {
+                    document.body.classList.toggle('hermes-mode');
+                    document.body.classList.remove(animationClass);
+                    isTransitioning = false;
+                }, 1200); // Doit correspondre à la durée de transition CSS
+            });
+
+            // --- 5. SCROLL LOGIC ---
+            let targetProgress = 0; let currentProgress = 0; 
+            const speed = 0.0012; const ease = 0.06; 
+            const maxScroll = 4.5;
+
+            window.addEventListener('wheel', (e) => {
+                targetProgress += e.deltaY * speed;
+                if (targetProgress < 0) targetProgress = 0;
+                if (targetProgress > maxScroll) targetProgress = maxScroll;
+            });
+            let startY = 0;
+            window.addEventListener('touchstart', (e) => startY = e.touches[0].clientY);
+            window.addEventListener('touchmove', (e) => {
+                const delta = startY - e.touches[0].clientY;
+                targetProgress += delta * (speed * 2.5);
+                if (targetProgress < 0) targetProgress = 0;
+                if (targetProgress > maxScroll) targetProgress = maxScroll;
+                startY = e.touches[0].clientY;
+            });
+
+            const zoomLayer = document.getElementById('zoom-layer');
+            const secondPage = document.getElementById('second-page');
+            const thirdPage = document.getElementById('third-page');
+            const gallerySection = document.getElementById('gallery-section');
+            const titleLeft = document.getElementById('title-left');
+            const titleRight = document.getElementById('title-right');
+            const skillsGrid = document.getElementById('skills-grid');
+            const ledgeText = document.getElementById('ledge-text');
+            const finalPage = document.getElementById('final-page');
+            const body = document.body;
+
+            function animateScroll() {
+                currentProgress += (targetProgress - currentProgress) * ease;
+
+                // PHASE 1
+                let p1 = currentProgress; if (p1 > 1) p1 = 1; 
+                const scale = 1 + Math.pow(p1, 3) * 150;
+                let layerOpacity = 1; if (scale > 30) layerOpacity = 1 - ((scale - 30) / 40);
+                if (layerOpacity < 0) layerOpacity = 0;
+                let page2Opacity = (p1 - 0.7) * 4; if (page2Opacity < 0) page2Opacity = 0; if (page2Opacity > 1) page2Opacity = 1;
+
+                zoomLayer.style.transform = `scale(${scale})`;
+                zoomLayer.style.opacity = layerOpacity;
+                secondPage.style.opacity = page2Opacity;
+
+                if (currentProgress > 0.8 && currentProgress < 1.1) {
+                    body.classList.add('content-active');
+                    themeBtn.style.pointerEvents = "none";
+                } else {
+                    body.classList.remove('content-active');
+                    if(currentProgress < 0.2) themeBtn.style.pointerEvents = "auto";
+                }
+
+                // PHASE 2
+                let p2 = currentProgress - 1; if (p2 < 0) p2 = 0;
+                const liftP2 = p2 * 100; 
+                secondPage.style.transform = `translateY(-${liftP2}vh)`;
+                
+                let slideProgress = (p2 - 0.2) * 1.5; if(slideProgress < 0) slideProgress = 0; if(slideProgress > 1) slideProgress = 1;
+                const slideEase = 1 - Math.pow(1 - slideProgress, 3);
+                const leftX = -100 + (slideEase * 100); const rightX = 100 - (slideEase * 100);
+                titleLeft.style.transform = `translateX(${leftX}vw)`;
+                titleRight.style.transform = `translateX(${rightX}vw)`;
+                skillsGrid.style.transform = `translateY(${ (1-p2)*100 }px)`;
+                skillsGrid.style.opacity = p2 * 2;
+
+                // PHASE 3
+                let p3 = currentProgress - 2; if (p3 < 0) p3 = 0;
+                const liftP3 = p3 * 100;
+                thirdPage.style.transform = `translateY(${100 - (p2*100) - liftP3}%)`;
+                
+                let galleryY = 100 - (p3 * 100); 
+                if (currentProgress > 3) {
+                    galleryY -= (currentProgress - 3) * 100;
+                }
+                gallerySection.style.transform = `translateY(${galleryY}%)`;
+
+                // PHASE 4
+                if (currentProgress > 2.5) {
+                    const textProgress = (currentProgress - 2.5);
+                    const startY = 150; const endY = -150; 
+                    const currentY = startY - (textProgress * (startY - endY) / 1.5);
+                    const rotateX = 45 - (textProgress * 10); 
+                    ledgeText.style.opacity = 1;
+                    ledgeText.style.transform = `rotateX(${rotateX}deg) translateY(${currentY}vh)`;
+                } else {
+                    ledgeText.style.opacity = 0;
+                }
+
+                // PHASE 5
+                let p5 = currentProgress - 3.8; 
+                if (p5 < 0) p5 = 0;
+                const finalY = 100 - (p5 * 100 * 1.5); 
+                finalPage.style.transform = `translateY(${finalY}%)`;
+
+                requestAnimationFrame(animateScroll);
+            }
+            animateScroll();
+
+
+            // --- 6. 3D CARDS ---
+            const container = document.getElementById('cards-container');
+            const cardCount = 6;  
+            const cards = [];
+            const speedZ = 15; const maxZ = 3000; const depth = 8000; 
+            const totalDistance = depth + maxZ;
+            const stepZ = totalDistance / cardCount;
+            let globalMouseX = 0; let globalMouseY = 0;
+
+            window.addEventListener('mousemove', (e) => {
+                globalMouseX = e.clientX - window.innerWidth / 2;
+                globalMouseY = e.clientY - window.innerHeight / 2;
+            });
+
+            const images = [
+                'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400',
+                'https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=400',
+                'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=400',
+                'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400',
+                'https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=400',
+                'https://images.unsplash.com/photo-1614730341194-75c607400070?w=400'
+            ];
+
+            function createFace(type) {
+                const el = document.createElement('div'); el.classList.add('cube-face', type); return el;
+            }
+
+            for (let i = 0; i < cardCount; i++) {
+                const card = document.createElement('div'); card.classList.add('infinite-card');
+                const faceFront = createFace('face-front');
+                const img = document.createElement('img'); img.src = images[i % images.length]; img.classList.add('card-img');
+                const cap = document.createElement('div'); cap.classList.add('card-caption'); cap.innerText = `PROJET_0${i+1}`;
+                faceFront.appendChild(img); faceFront.appendChild(cap);
+                const faceBack = createFace('face-back');
+                const faceRight = createFace('face-right'); const faceLeft = createFace('face-left');
+                const faceTop = createFace('face-top'); const faceBottom = createFace('face-bottom');
+                card.appendChild(faceFront); card.appendChild(faceBack); card.appendChild(faceRight); card.appendChild(faceLeft); card.appendChild(faceTop); card.appendChild(faceBottom);
+                container.appendChild(card);
+
+                const randomLineIndex = Math.floor(Math.random() * linesCount);
+                const lineAngleDeg = (360 / linesCount) * randomLineIndex;
+                const lineAngleRad = (lineAngleDeg * Math.PI) / 180;
+                const initialZ = -depth + (i * stepZ);
+
+                cards.push({
+                    element: card, angle: lineAngleRad, spread: 0.8 + (Math.random() * 1.5), z: initialZ, 
+                    rotX: Math.random() * 360, rotY: Math.random() * 360, rotZ: Math.random() * 360,
+                    spX: (Math.random() - 0.5) * 0.5, spY: (Math.random() - 0.5) * 0.5, spZ: (Math.random() - 0.5) * 0.5,
+                    isDragging: false, currentX: 0, currentY: 0, vx: 0, vy: 0, swayOffset: Math.random() * 100, currentScale: 0.2, scaleVelocity: 0
+                });
+
+                card.addEventListener('mousedown', (e) => {
+                    const obj = cards[i]; obj.isDragging = true; cursor.classList.add('grabbing');
+                    obj.currentX = globalMouseX; obj.currentY = globalMouseY; obj.vx = 0; obj.vy = 0; card.style.zIndex = 9999;
+                });
+                window.addEventListener('mouseup', () => {
+                    const obj = cards[i];
+                    if (obj.isDragging) { obj.isDragging = false; cursor.classList.remove('grabbing'); card.style.zIndex = "10"; obj.z -= 500; }
+                });
+            }
+
+            const springStiffness = 0.2; const springFriction = 0.5;
+
+            function animateCards() {
+                cards.forEach(c => {
+                    if (c.isDragging) {
+                        const dx = globalMouseX - c.currentX; const dy = globalMouseY - c.currentY;
+                        c.vx = (c.vx + (dx * 0.1)) * 0.7; c.vy = (c.vy + (dy * 0.1)) * 0.7;
+                        c.currentX += c.vx; c.currentY += c.vy;
+                        const dScale = 4.5 - c.currentScale;
+                        const aScale = dScale * springStiffness; c.scaleVelocity = (c.scaleVelocity + aScale) * springFriction; c.currentScale += c.scaleVelocity;
+                        const tiltX = c.vy * 0.5; const tiltY = -c.vx * 0.5; 
+                        const time = Date.now() * 0.002; const swayX = Math.sin(time + c.swayOffset) * 10; const swayY = Math.cos(time + c.swayOffset) * 5;
+                        c.element.style.transform = `translate3d(${c.currentX}px, ${c.currentY}px, 0) scale(${c.currentScale}) rotateX(${tiltX + swayY}deg) rotateY(${tiltY + swayX}deg) rotateZ(0deg)`;
+                    } else {
+                        c.z += speedZ; c.rotX += c.spX; c.rotY += c.spY; c.rotZ += c.spZ;
+                        if (c.z > maxZ) {
+                            c.z = -depth; 
+                            const randomLineIndex = Math.floor(Math.random() * linesCount); const lineAngleDeg = (360 / linesCount) * randomLineIndex; c.angle = (lineAngleDeg * Math.PI) / 180;
+                            c.spread = 0.8 + (Math.random() * 1.5); c.currentScale = 0; c.scaleVelocity = 0;
+                        }
+                        const progress = (c.z + depth) / (depth + maxZ);
+                        const expansion = Math.pow(progress, 2.5) * 2000;
+                        const x = Math.cos(c.angle) * expansion * c.spread; const y = Math.sin(c.angle) * expansion * c.spread;
+                        let opacity = progress * 4; if (opacity > 1) opacity = 1;
+                        let targetScale = 0.2 + (progress * 0.8); targetScale += Math.pow(progress, 4) * 3; 
+                        c.currentScale += (targetScale - c.currentScale) * 0.1;
+                        c.element.style.opacity = opacity;
+                        c.element.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${c.currentScale}) rotateX(${c.rotX}deg) rotateY(${c.rotY}deg) rotateZ(${c.rotZ}deg)`;
+                    }
+                });
+                requestAnimationFrame(animateCards);
+            }
+            animateCards();
+        });
     </script>
 </body>
 </html>
