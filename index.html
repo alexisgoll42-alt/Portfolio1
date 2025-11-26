@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AW - Creative Developer Freelance</title>
+    <style>
+        /* --- 1. RESET & VARIABLES (Code original extrait) --- */
+        :root {
+            --color-bg: #f4f0e8;
+            --color-text: #0d0d0d;
+            --color-accent: #e60023; /* Le rouge officiel de wodniack.dev */
+            --font-primary: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            --font-display: 'Impact', sans-serif;
+            --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            font-family: var(--font-primary);
+            font-size: 16px;
+            overflow-x: hidden;
+            overscroll-behavior: none;
+            cursor: crosshair; /* Le curseur croix du site */
+        }
+
+        /* --- 2. HEADER --- */
+        .header {
+            position: fixed;
+            top: 0; left: 0; width: 100%;
+            padding: 2rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            z-index: 100;
+            mix-blend-mode: difference;
+            color: #fff;
+            pointer-events: none; /* Laisse cliquer au travers */
+        }
+        
+        .header-logo, .header-nav a {
+            pointer-events: auto;
+            text-decoration: none;
+            color: inherit;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+        }
+
+        .header-nav ul {
+            list-style: none;
+            display: flex;
+            gap: 2rem;
+        }
+
+        /* --- 3. SCROLL CONTAINER (Smooth Scroll) --- */
+        .main-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .scroll-content {
+            will-change: transform; /* Optimisation performance */
+        }
+
+        /* --- 4. HERO SECTION (KINETIC TYPO) --- */
+        .section-hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding-top: 10vh;
+        }
+
+        .big-title {
+            font-family: var(--font-display);
+            font-size: 13.5vw;
+            line-height: 0.82;
+            text-transform: uppercase;
+            text-align: center;
+            white-space: nowrap;
+            color: var(--color-text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .big-title .line {
+            display: block;
+            overflow: hidden;
+        }
+
+        /* Animation d'entrée comme sur le site */
+        .big-title span {
+            display: inline-block;
+            transform: translateY(100%);
+            animation: slideUp 1.2s var(--ease-out-expo) forwards;
+        }
+        .line:nth-child(2) span { animation-delay: 0.1s; }
+
+        @keyframes slideUp {
+            to { transform: translateY(0); }
+        }
+
+        /* --- 5. PROJECT LIST (TABLE STYLE) --- */
+        .section-work {
+            padding: 10vh 0;
+            width: 90%;
+            margin: 0 auto;
+        }
+
+        .work-header {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            margin-bottom: 4rem;
+            opacity: 0.5;
+        }
+
+        .project-row {
+            border-top: 1px solid rgba(13, 13, 13, 0.2);
+            padding: 2rem 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            transition: color 0.3s ease;
+            cursor: pointer;
+        }
+
+        .project-row:last-child { border-bottom: 1px solid rgba(13, 13, 13, 0.2); }
+
+        .project-row:hover {
+            color: var(--color-accent); /* Hover Rouge */
+        }
+
+        .p-name { font-size: 2.5vw; font-family: var(--font-display); text-transform: uppercase; }
+        .p-type { font-size: 0.9rem; opacity: 0.6; }
+        .p-year { font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+
+        /* --- 6. FOOTER (WATERFALL TEXT) --- */
+        .section-footer {
+            height: 120vh; /* Grand espace pour le scroll */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            perspective: 1000px; /* Clé de l'effet 3D */
+            overflow: hidden;
+            background-color: var(--color-accent); /* Fond rouge à la fin */
+            color: var(--color-text);
+            margin-top: 20vh;
+        }
+
+        /* Le texte qui tombe */
+        .waterfall-text {
+            font-family: var(--font-display);
+            font-size: 16vw;
+            line-height: 0.85;
+            text-align: center;
+            text-transform: uppercase;
+            transform-origin: bottom center;
+            will-change: transform;
+        }
+
+        /* Le bouton GO */
+        .footer-cta {
+            width: 10vw; height: 10vw;
+            min-width: 120px; min-height: 120px;
+            background: #000;
+            color: var(--color-accent);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-display);
+            font-size: 2rem;
+            position: absolute;
+            bottom: 10vh;
+            z-index: 10;
+            cursor: pointer;
+            transition: transform 0.3s var(--ease-out-expo);
+        }
+        .footer-cta:hover { transform: scale(1.1); }
+
+        /* --- 7. BINARY BACKGROUND (Décoration) --- */
+        .binary-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            font-family: monospace;
+            font-size: 10px;
+            color: rgba(0,0,0,0.03);
+            overflow: hidden;
+            white-space: pre-wrap;
+            word-break: break-all;
+            line-height: 1;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <a href="#" class="header-logo">Antoine Wodniack</a>
+        <nav class="header-nav">
+            <ul>
+                <li><a href="#about">About</a></li>
+                <li><a href="#work">Work</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="binary-bg" id="binaryBg"></div>
+
+    <div class="main-container">
+        <div class="scroll-content" id="scrollContent">
+            
+            <section class="section-hero">
+                <h1 class="big-title">
+                    <span class="line"><span>CREATIVE</span></span>
+                    <span class="line"><span>DEVELOPER</span></span>
+                </h1>
+            </section>
+
+            <section class="section-work" id="work">
+                <div class="work-header">Selected Works (2020-2025)</div>
+                
+                <div class="project-row">
+                    <span class="p-name">Generous Branding</span>
+                    <span class="p-type">Creative Dev</span>
+                    <span class="p-year">2024</span>
+                </div>
+                <div class="project-row">
+                    <span class="p-name">Hunter Farmer</span>
+                    <span class="p-type">WebGL</span>
+                    <span class="p-year">2024</span>
+                </div>
+                <div class="project-row">
+                    <span class="p-name">Nod Bootcamp</span>
+                    <span class="p-type">Front-End</span>
+                    <span class="p-year">2023</span>
+                </div>
+                <div class="project-row">
+                    <span class="p-name">Rudl und Schwarm</span>
+                    <span class="p-type">Experience</span>
+                    <span class="p-year">2023</span>
+                </div>
+                <div class="project-row">
+                    <span class="p-name">24/7 Artists</span>
+                    <span class="p-type">Development</span>
+                    <span class="p-year">2022</span>
+                </div>
+                <div class="project-row">
+                    <span class="p-name">Vanguart</span>
+                    <span class="p-type">Animation</span>
+                    <span class="p-year">2022</span>
+                </div>
+                <div class="project-row">
+                    <span class="p-name">CodePen</span>
+                    <span class="p-type">Experiments</span>
+                    <span class="p-year">∞</span>
+                </div>
+            </section>
+
+            <section class="section-footer">
+                <div class="waterfall-text" id="waterfallText">
+                    CODING<br>MY WAY<br>SINCE<br>1987
+                </div>
+                <div class="footer-cta">GO</div>
+            </section>
+
+        </div>
+    </div>
+
+    <script>
+        // --- LOGIQUE JAVASCRIPT SIMPLIFIÉE ---
+        // Simulation de LocomotiveScroll / Lenis pour l'inertie
+
+        const container = document.querySelector('.main-container');
+        const content = document.getElementById('scrollContent');
+        const waterfallText = document.getElementById('waterfallText');
+        
+        let currentY = 0;
+        let targetY = 0;
+        const ease = 0.075; // Inertie
+
+        // Initialisation de la hauteur
+        function setHeight() {
+            document.body.style.height = `${content.getBoundingClientRect().height}px`;
+        }
+        window.addEventListener('resize', setHeight);
+        setHeight();
+
+        // Capture du scroll
+        window.addEventListener('scroll', () => {
+            targetY = window.scrollY;
+        });
+
+        // Boucle d'animation (RAF)
+        function animate() {
+            // Interpolation linéaire (Lerp) pour la fluidité
+            currentY += (targetY - currentY) * ease;
+
+            // Application du scroll fluide
+            content.style.transform = `translate3d(0, -${currentY}px, 0)`;
+
+            // --- EFFET WATERFALL (Le texte qui tombe) ---
+            // On calcule quand le footer arrive à l'écran
+            const footerOffset = document.querySelector('.section-footer').offsetTop;
+            const distFromFooter = currentY + window.innerHeight - footerOffset;
+
+            if (distFromFooter > 0) {
+                // Calcul de la rotation basé sur le scroll
+                // Plus on descend, plus ça tourne vers 90deg
+                const progress = Math.min(distFromFooter / window.innerHeight, 1);
+                const rotateX = progress * 60; // Max 60 degrés
+                const translateY = progress * 100; // Glisse vers le bas
+
+                waterfallText.style.transform = `perspective(1000px) rotateX(${rotateX}deg) translateY(${translateY}px)`;
+                waterfallText.style.opacity = 1 - (progress * 0.5); // Leger fade
+            }
+
+            // Boucle infinie
+            requestAnimationFrame(animate);
+        }
+        
+        // Lancer l'animation
+        animate();
+
+        // --- Génération du Background Binaire ---
+        const binaryBg = document.getElementById('binaryBg');
+        let binaryString = "";
+        for(let i=0; i<3000; i++) {
+            binaryString += Math.random() > 0.5 ? "1 " : "0 ";
+        }
+        binaryBg.textContent = binaryString;
+
+    </script>
+</body>
+</html>
